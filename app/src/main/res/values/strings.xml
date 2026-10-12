@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Capsibus</string>
+    <string name="subtitle">chili leaf diagnostic · offline</string>
+
+    <string name="btn_take_photo">Take Photo</string>
+    <string name="btn_choose_gallery">Choose from Gallery</string>
+    <string name="btn_analyse_another">Analyse Another</string>
+    <string name="btn_retry">Retry</string>
+    <string name="btn_open_settings">Open Settings</string>
+
+    <string name="camera_framing_hint">Fill the frame with a single leaf. Avoid whole-plant shots.</string>
+    <string name="model_spec_footer">Model: InceptionV3 · τ 0.70 · on-device</string>
+
+    <string name="verdict_bacterial">BACTERIAL</string>
+    <string name="verdict_fungal">FUNGAL</string>
+    <string name="verdict_healthy">HEALTHY</string>
+    <string name="verdict_non_chili">NOT A CHILI LEAF</string>
+    <string name="verdict_pests">PESTS</string>
+    <string name="verdict_virus">VIRUS</string>
+    <string name="verdict_uncertain">UNCERTAIN</string>
+    <string name="verdict_unreadable">UNREADABLE</string>
+
+    <string name="action_bacterial">Signs consistent with bacterial infection. Remove and destroy affected leaves, avoid overhead watering, and sanitise tools between plants. Confirm with your local agriculture officer before applying any treatment.</string>
+    <string name="action_fungal">Signs consistent with fungal infection. Improve spacing and airflow, keep foliage dry, and clear fallen debris around the plant. Confirm with your local agriculture officer before applying any treatment.</string>
+    <string name="action_healthy">No disease indicators detected in this leaf. Continue routine monitoring, especially on new growth and leaf undersides.</string>
+    <string name="action_pests">Signs consistent with pest damage. Inspect leaf undersides and stems for insects or eggs. Note: this app performs poorly on pest damage under field conditions — treat this result as a prompt to inspect, not as a diagnosis.</string>
+    <string name="action_virus">Signs consistent with viral infection. Viral disease cannot be cured; isolate or remove affected plants, control insect vectors, and sanitise tools. Confirm with your local agriculture officer.</string>
+    <string name="action_uncertain">The image is unclear or cannot be confidently identified. Please take a closer, well-lit photo of the affected chili leaf.</string>
+    <string name="action_non_chili">This does not appear to be a chili plant leaf. Please capture a valid chili leaf.</string>
+    <string name="action_unreadable">This image could not be opened. Please choose another.</string>
+
+    <string name="disclaimer_footer">Research prototype. Accuracy degrades on distant or whole-plant photographs. Not a substitute for professional agronomic advice.</string>
+    <string name="detailed_probabilities">Detailed probabilities</string>
+    <string name="confidence_label">CONFIDENCE</string>
+
+    <string name="permission_denied_title">Camera Access Required</string>
+    <string name="permission_denied_desc">Capsibus requires camera access to capture leaf images for on-device diagnosis. You can also select photos from your gallery.</string>
+</resources>

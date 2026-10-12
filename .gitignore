@@ -1,0 +1,53 @@
+# Gradle and build output
+.gradle/
+build/
+.kotlin/
+# A local Gradle install, and distribution zips (gradle-8.5-bin.zip is ~126 MiB, over GitHub's 100 MB limit)
+gradle_home/
+*.zip
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+.navigation/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Machine-specific SDK path
+local.properties
+
+# Build artifacts
+*.apk
+*.aab
+*.aar
+*.ap_
+*.dex
+*.class
+
+# Signing material: never commit a keystore or its base64 copy
+*.jks
+*.keystore
+*.p12
+*.b64
+keystore.properties
+
+# Archives
+*.rar
+*.7z
+
+# Tooling and scratch folders
+node_modules/
+scratch/
+.claude-flow/
+.agents/
+skills-lock.json
+
+# Kept out of this repo: the duplicate project copy and the ML research kit (holds a 135 MB .keras file)
+/Capsibus/
+/ChiliVision_App_Kit/
+
+# OS clutter
+.DS_Store
+Thumbs.db
+desktop.ini

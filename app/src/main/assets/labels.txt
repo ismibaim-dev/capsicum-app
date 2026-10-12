@@ -1,0 +1,6 @@
+Bacterial
+Fungal
+Healthy
+NonChili
+Pests
+Virus
