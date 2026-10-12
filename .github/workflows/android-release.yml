@@ -1,0 +1,84 @@
+name: Android release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # The model is ~86 MiB in Git LFS. Cache the LFS objects so repeat releases
+      # don't spend LFS bandwidth downloading the same file again.
+      - name: List LFS objects
+        run: git lfs ls-files --long | cut -d ' ' -f1 | sort > .lfs-ids
+
+      - name: Restore LFS cache
+        uses: actions/cache@v4
+        with:
+          path: .git/lfs
+          key: lfs-${{ hashFiles('.lfs-ids') }}
+
+      - name: Pull LFS files
+        run: git lfs pull
+
+      - name: Check the model is present
+        run: |
+          model=app/src/main/assets/chilivision_inceptionv3.tflite
+          if [ ! -f "$model" ]; then
+            echo "::error::$model is missing. Add it with Git LFS before tagging a release (see README)."
+            exit 1
+          fi
+          size=$(stat -c %s "$model")
+          if [ "$size" -lt 1000000 ]; then
+            echo "::error::$model is only $size bytes, so it is an LFS pointer, not the model."
+            exit 1
+          fi
+          echo "Model OK: $size bytes"
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          validate-wrappers: true
+
+      - name: Build signed release APK
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Repository secret $name is not set (Settings > Secrets and variables > Actions)."
+              exit 1
+            fi
+          done
+          ./gradlew --no-daemon assembleRelease
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          apk="Capsibus-$TAG.apk"
+          cp app/build/outputs/apk/release/app-release.apk "$apk"
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" "$apk" --clobber
+          else
+            gh release create "$TAG" "$apk" --title "Capsibus $TAG" --generate-notes
+          fi

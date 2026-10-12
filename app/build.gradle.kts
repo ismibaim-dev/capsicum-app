@@ -1,11 +1,33 @@
+import java.util.Base64
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
 
+// Release signing comes from environment variables (GitHub Actions secrets in CI).
+// Without KEYSTORE_BASE64 the release APK is built unsigned, and Android will not install it.
+val releaseKeystore: File? = System.getenv("KEYSTORE_BASE64")?.takeIf { it.isNotBlank() }?.let { encoded ->
+    layout.buildDirectory.file("signing/release.jks").get().asFile.apply {
+        parentFile.mkdirs()
+        writeBytes(Base64.getMimeDecoder().decode(encoded))
+    }
+}
+
 android {
     namespace = "com.chilivision.app"
     compileSdk = 34
+
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = releaseKeystore
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
 
     defaultConfig {
         applicationId = "com.chilivision.app"
@@ -27,6 +49,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.findByName("release")
         }
         debug {
             applicationIdSuffix = ".debug"

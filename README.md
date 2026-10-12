@@ -23,7 +23,8 @@ Product and design notes live in [`docs/capsibus-prd.md`](docs/capsibus-prd.md) 
 [Git LFS](https://git-lfs.com) (see `.gitattributes`). Install Git LFS once with `git lfs install`
 before cloning or the file comes down as a small text pointer.
 
-The app builds without the model, but it shows "Model initialization failed" at runtime.
+The app builds without the model, but it shows "Model initialization failed" at runtime. The
+release workflow refuses to build if the model is missing or is only an LFS pointer.
 
 ## Build locally
 
@@ -38,3 +39,19 @@ gradlew.bat assembleDebug          :: Windows
 ```
 
 The debug APK lands in `app/build/outputs/apk/debug/`. Unit tests: `gradlew testDebugUnitTest`.
+
+## Releases
+
+Pushing a tag that starts with `v` (for example `v1.0.0`) runs
+`.github/workflows/android-release.yml`, which builds a signed release APK and attaches it to a
+GitHub Release. Signing reads these repository secrets:
+
+| Secret | Contents |
+|---|---|
+| `KEYSTORE_BASE64` | The release keystore file, base64-encoded |
+| `KEYSTORE_PASSWORD` | Keystore password |
+| `KEY_ALIAS` | Key alias inside the keystore |
+| `KEY_PASSWORD` | Key password |
+
+The keystore itself is never committed (`*.jks`, `*.keystore` and `*.b64` are ignored). Keep a
+backup of it: Android only installs updates signed with the same key.
