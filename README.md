@@ -44,8 +44,9 @@ The debug APK lands in `app/build/outputs/apk/debug/`. Unit tests: `gradlew test
 
 Pushing a tag that starts with `v` (for example `v1.0.0`) runs
 `.github/workflows/android-release.yml`, which builds a signed release APK and attaches it to a
-GitHub Release. Running the same workflow by hand from the Actions tab builds the APK as a
-downloadable workflow artifact instead, without publishing anything.
+GitHub Release. You can also run it by hand from the Actions tab (Android release > Run
+workflow): enter a tag such as `v1.0.1` to publish that release (the workflow creates the tag), or
+leave the tag empty for a test build whose APK is kept as a workflow artifact.
 
 Signing reads these repository secrets:
 
