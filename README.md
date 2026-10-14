@@ -44,14 +44,34 @@ The debug APK lands in `app/build/outputs/apk/debug/`. Unit tests: `gradlew test
 
 Pushing a tag that starts with `v` (for example `v1.0.0`) runs
 `.github/workflows/android-release.yml`, which builds a signed release APK and attaches it to a
-GitHub Release. Signing reads these repository secrets:
+GitHub Release. Running the same workflow by hand from the Actions tab builds the APK as a
+downloadable workflow artifact instead, without publishing anything.
+
+Signing reads these repository secrets:
 
 | Secret | Contents |
 |---|---|
 | `KEYSTORE_BASE64` | The release keystore file, base64-encoded |
 | `KEYSTORE_PASSWORD` | Keystore password |
 | `KEY_ALIAS` | Key alias inside the keystore |
-| `KEY_PASSWORD` | Key password |
+| `KEY_PASSWORD` | Key password (the same as the keystore password for keytool's default format) |
+
+If none of them are set, the workflow signs with a temporary key generated for that run. The APK
+installs normally, but Android refuses to install a later version over it unless the old one is
+uninstalled first, because each run's key is different. Set a permanent key before sharing the
+app with other people.
+
+### Setting a permanent key (Windows PowerShell)
+
+```powershell
+cd $HOME
+keytool -genkeypair -v -keystore capsibus-release.jks -alias capsibus -keyalg RSA -keysize 4096 -validity 10000
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("$HOME\capsibus-release.jks")) | Set-Clipboard
+```
+
+`keytool` ships with the JDK (for example `C:\Program Files\Microsoft\jdk-17.0.20.101-hotspot\bin`).
+Then add the four secrets under the repository's Settings > Secrets and variables > Actions,
+pasting the clipboard into `KEYSTORE_BASE64`.
 
 The keystore itself is never committed (`*.jks`, `*.keystore` and `*.b64` are ignored). Keep a
-backup of it: Android only installs updates signed with the same key.
+backup of it and its password: Android only installs updates signed with the same key.
