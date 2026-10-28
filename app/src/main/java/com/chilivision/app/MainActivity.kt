@@ -64,8 +64,11 @@ fun CapsibusAppNavigation(resultViewModel: ResultViewModel) {
             route = "result/{imageUri}",
             arguments = listOf(navArgument("imageUri") { type = NavType.StringType })
         ) { backStackEntry ->
+            // Navigation already decodes path arguments. Decoding again turns the
+            // gallery's "image%3A123" into "image:123", which no longer matches
+            // the URI the read grant was issued for.
             val uriString = backStackEntry.arguments?.getString("imageUri")
-            val imageUri = Uri.parse(Uri.decode(uriString))
+            val imageUri = Uri.parse(uriString)
 
             ResultScreen(
                 imageUri = imageUri,
