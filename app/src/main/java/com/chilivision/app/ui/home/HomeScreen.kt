@@ -1,5 +1,6 @@
 package com.chilivision.app.ui.home
 
+import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -13,9 +14,11 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -31,6 +34,10 @@ fun HomeScreen(
     onImageSelected: (Uri) -> Unit,
     onNavigateToDevSettings: () -> Unit
 ) {
+    val context = LocalContext.current
+    val hasCamera = remember {
+        context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)
+    }
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
@@ -86,39 +93,42 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Primary: Take Photo
-                Button(
-                    onClick = onNavigateToCamera,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(64.dp),
-                    shape = RoundedCornerShape(4.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = AccentRed,
-                        contentColor = OnSurfacePrimary
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Start
+                // Hidden on devices without a camera (the manifest marks it optional)
+                if (hasCamera) {
+                    // Primary: Take Photo
+                    Button(
+                        onClick = onNavigateToCamera,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(64.dp),
+                        shape = RoundedCornerShape(4.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AccentRed,
+                            contentColor = OnSurfacePrimary
+                        )
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.CameraAlt,
-                            contentDescription = null,
-                            modifier = Modifier.padding(start = 8.dp, end = 16.dp)
-                        )
-                        Text(
-                            text = stringResource(R.string.btn_take_photo),
-                            style = Typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = OnSurfacePrimary
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CameraAlt,
+                                contentDescription = null,
+                                modifier = Modifier.padding(start = 8.dp, end = 16.dp)
                             )
-                        )
+                            Text(
+                                text = stringResource(R.string.btn_take_photo),
+                                style = Typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = OnSurfacePrimary
+                                )
+                            )
+                        }
                     }
-                }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
 
                 // Secondary: Choose from Gallery
                 OutlinedButton(

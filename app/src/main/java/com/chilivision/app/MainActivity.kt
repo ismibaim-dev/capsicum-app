@@ -41,6 +41,7 @@ fun CapsibusAppNavigation(resultViewModel: ResultViewModel) {
             HomeScreen(
                 onNavigateToCamera = { navController.navigate("camera") },
                 onImageSelected = { uri ->
+                    resultViewModel.clearResult()
                     val encodedUri = Uri.encode(uri.toString())
                     navController.navigate("result/$encodedUri")
                 },
@@ -51,6 +52,7 @@ fun CapsibusAppNavigation(resultViewModel: ResultViewModel) {
         composable("camera") {
             CameraScreen(
                 onImageCaptured = { uri ->
+                    resultViewModel.clearResult()
                     val encodedUri = Uri.encode(uri.toString())
                     navController.navigate("result/$encodedUri") {
                         popUpTo("home")
@@ -67,7 +69,7 @@ fun CapsibusAppNavigation(resultViewModel: ResultViewModel) {
             // Navigation already decodes path arguments. Decoding again turns the
             // gallery's "image%3A123" into "image:123", which no longer matches
             // the URI the read grant was issued for.
-            val uriString = backStackEntry.arguments?.getString("imageUri")
+            val uriString = backStackEntry.arguments?.getString("imageUri") ?: return@composable
             val imageUri = Uri.parse(uriString)
 
             ResultScreen(

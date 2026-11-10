@@ -64,12 +64,17 @@ class TfLiteChiliModel(context: Context) : AutoCloseable {
     }
 
     private fun loadModelFile(context: Context, filename: String): ByteBuffer {
-        val fileDescriptor: AssetFileDescriptor = context.assets.openFd(filename)
-        val inputStream = FileInputStream(fileDescriptor.fileDescriptor)
-        val fileChannel: FileChannel = inputStream.channel
-        val startOffset: Long = fileDescriptor.startOffset
-        val declaredLength: Long = fileDescriptor.declaredLength
-        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
+        // The mapped buffer stays valid after the descriptor and stream are closed.
+        context.assets.openFd(filename).use { fileDescriptor: AssetFileDescriptor ->
+            FileInputStream(fileDescriptor.fileDescriptor).use { inputStream ->
+                val fileChannel: FileChannel = inputStream.channel
+                return fileChannel.map(
+                    FileChannel.MapMode.READ_ONLY,
+                    fileDescriptor.startOffset,
+                    fileDescriptor.declaredLength
+                )
+            }
+        }
     }
 
     companion object {

@@ -6,6 +6,9 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import android.view.ViewGroup
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -22,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -48,7 +52,20 @@ fun CameraScreen(
     onClose: () -> Unit
 ) {
     val context = LocalContext.current
-    val permissionState = rememberPermissionState(permission = Manifest.permission.CAMERA)
+    // Until the first permission answer arrives, "denied without rationale" can't be told
+    // apart from "permanently denied", so show nothing rather than the Open Settings card.
+    var permissionAsked by rememberSaveable { mutableStateOf(false) }
+    val permissionState = rememberPermissionState(permission = Manifest.permission.CAMERA) {
+        permissionAsked = true
+    }
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null) onImageCaptured(uri)
+    }
+    val openGallery = {
+        galleryLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+    }
 
     LaunchedEffect(Unit) {
         if (!permissionState.status.isGranted) {
@@ -68,13 +85,14 @@ fun CameraScreen(
                     onClose = onClose
                 )
             }
+            !permissionAsked -> Unit
             permissionState.status.shouldShowRationale -> {
                 PermissionRationaleCard(
                     title = stringResource(R.string.permission_denied_title),
                     description = stringResource(R.string.permission_denied_desc),
                     buttonText = stringResource(R.string.btn_retry),
                     onButtonClick = { permissionState.launchPermissionRequest() },
-                    onClose = onClose
+                    onChooseGallery = openGallery
                 )
             }
             else -> {
@@ -88,7 +106,7 @@ fun CameraScreen(
                         }
                         context.startActivity(intent)
                     },
-                    onClose = onClose
+                    onChooseGallery = openGallery
                 )
             }
         }
@@ -273,7 +291,7 @@ private fun PermissionRationaleCard(
     description: String,
     buttonText: String,
     onButtonClick: () -> Unit,
-    onClose: () -> Unit
+    onChooseGallery: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -309,7 +327,7 @@ private fun PermissionRationaleCard(
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
-        TextButton(onClick = onClose) {
+        TextButton(onClick = onChooseGallery) {
             Text(stringResource(R.string.btn_choose_gallery), color = OnSurfaceMuted)
         }
     }
@@ -321,6 +339,9 @@ private fun takePhoto(
     onImageCaptured: (Uri) -> Unit,
     onError: () -> Unit
 ) {
+    // Earlier captures are no longer shown anywhere; don't let them pile up in the cache.
+    context.cacheDir.listFiles { file -> file.name.startsWith("capsibus_capture_") }
+        ?.forEach { it.delete() }
     val photoFile = File(context.cacheDir, "capsibus_capture_${System.currentTimeMillis()}.jpg")
     val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
     val executor: Executor = ContextCompat.getMainExecutor(context)

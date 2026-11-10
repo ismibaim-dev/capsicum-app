@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.net.Uri
+import android.os.Build
 import androidx.exifinterface.media.ExifInterface
 import java.io.InputStream
 import java.nio.ByteBuffer
@@ -30,7 +31,11 @@ object ImagePreprocessor {
             // Calculate sample size for large images
             options.inSampleSize = calculateInSampleSize(options, 1024, 1024)
             options.inJustDecodeBounds = false
-            options.inPreferredColorSpace = android.graphics.ColorSpace.get(android.graphics.ColorSpace.Named.SRGB)
+            // ColorSpace exists from API 26; on Android 7.x touching it throws an Error
+            // that the catch below does not handle, crashing the app.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                options.inPreferredColorSpace = android.graphics.ColorSpace.get(android.graphics.ColorSpace.Named.SRGB)
+            }
 
             // 2. Decode bitmap
             inputStream = context.contentResolver.openInputStream(uri)

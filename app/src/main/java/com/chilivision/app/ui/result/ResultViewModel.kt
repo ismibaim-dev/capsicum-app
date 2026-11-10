@@ -10,10 +10,12 @@ import com.chilivision.app.ml.ChiliClassifier
 import com.chilivision.app.ml.ClassificationResult
 import com.chilivision.app.ml.ImagePreprocessor
 import com.chilivision.app.ml.TfLiteChiliModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 sealed interface ResultUiState {
     object Idle : ResultUiState
@@ -48,6 +50,8 @@ sealed interface ResultUiState {
 class ResultViewModel(application: Application) : AndroidViewModel(application) {
 
     private var tfliteModel: TfLiteChiliModel? = null
+    private var modelInitError: String? = null
+    private var analyzedUri: Uri? = null
 
     private val _uiState = MutableStateFlow<ResultUiState>(ResultUiState.Idle)
     val uiState: StateFlow<ResultUiState> = _uiState.asStateFlow()
@@ -60,22 +64,35 @@ class ResultViewModel(application: Application) : AndroidViewModel(application) 
         try {
             tfliteModel = TfLiteChiliModel(application.applicationContext)
         } catch (e: Exception) {
-            _uiState.value = ResultUiState.Error("Model initialization failed: ${e.message}")
+            modelInitError = "Model initialization failed: ${e.message}"
+            _uiState.value = ResultUiState.Error(modelInitError!!)
         }
+    }
+
+    /** Forget the previous result so a new Result screen never shows it, even for one frame. */
+    fun clearResult() {
+        analyzedUri = null
+        _uiState.value = ResultUiState.Idle
     }
 
     fun analyzeUri(uri: Uri) {
         val model = tfliteModel
         if (model == null) {
-            _uiState.value = ResultUiState.Error("Model is not initialized")
+            _uiState.value = ResultUiState.Error(modelInitError ?: "Model is not initialized")
             return
         }
+        // Already analysed (e.g. the screen was recreated on rotation): keep the result.
+        if (uri == analyzedUri && _uiState.value !is ResultUiState.Idle) return
+        analyzedUri = uri
 
         viewModelScope.launch {
             _uiState.value = ResultUiState.Loading
 
-            // 1. Preprocess Uri to Bitmap and ByteBuffer
-            when (val prepResult = ImagePreprocessor.preprocessUri(getApplication(), uri)) {
+            // 1. Preprocess Uri to Bitmap and ByteBuffer, off the main thread
+            val prepResult = withContext(Dispatchers.Default) {
+                ImagePreprocessor.preprocessUri(getApplication(), uri)
+            }
+            when (prepResult) {
                 is BitmapPreprocessResult.Error -> {
                     _uiState.value = ResultUiState.Error(prepResult.message)
                 }
